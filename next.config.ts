@@ -19,6 +19,9 @@ if (process.env.RENDER_EXTERNAL_URL) {
 const googleOn = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
   env: {
     NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: googleOn ? "true" : "false",
   },

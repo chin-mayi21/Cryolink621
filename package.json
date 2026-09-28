@@ -15,9 +15,6 @@
     "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
     "postinstall": "node scripts/sync-prisma-provider.mjs && prisma generate"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
     "@prisma/client": "^6.16.2",
@@ -42,6 +39,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^16.6.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "prisma": "^6.16.2",

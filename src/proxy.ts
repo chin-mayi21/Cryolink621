@@ -16,7 +16,7 @@ function withNoStore(response: NextResponse) {
   return response;
 }
 
-export default auth((request) => {
+export const proxy = auth((request) => {
   const { pathname } = request.nextUrl;
   const session = request.auth;
   const role = session?.user?.role as UserRole | undefined;
