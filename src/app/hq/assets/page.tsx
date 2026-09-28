@@ -4,13 +4,20 @@ import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
-export default async function HqAssetsPage() {
+type HqAssetsPageProps = {
+  searchParams: Promise<{ expeditionId?: string }>;
+};
+
+export default async function HqAssetsPage({ searchParams }: HqAssetsPageProps) {
   const session = await getSession();
   if (!session || session.role !== "OPERATIONS_OFFICIAL") {
     redirect("/");
   }
 
-  const expeditionId = session.expeditionIds[0];
+  const { expeditionId: requestedExpeditionId } = await searchParams;
+  const expeditionId = requestedExpeditionId && session.expeditionIds.includes(requestedExpeditionId)
+    ? requestedExpeditionId
+    : session.expeditionIds[0];
   if (!expeditionId) {
     return (
       <HqPageShell title="Assets" subtitle="No expedition scope assigned.">
@@ -19,8 +26,12 @@ export default async function HqAssetsPage() {
     );
   }
 
+  const expedition = await prisma.expedition.findUnique({
+    where: { id: expeditionId },
+    select: { code: true, name: true },
+  });
   const assets = await prisma.asset.findMany({
-    where: { expeditionId: { in: session.expeditionIds } },
+    where: { expeditionId },
     include: { station: true },
     orderBy: { assetTag: "asc" },
   });
@@ -35,7 +46,10 @@ export default async function HqAssetsPage() {
   }));
 
   return (
-    <HqPageShell title="Assets" subtitle="Vehicles, generators, and critical equipment across stations.">
+    <HqPageShell
+      title="Assets"
+      subtitle={`${expedition?.name ?? "Expedition assets"} (${expedition?.code ?? expeditionId}) · Vehicles, generators, and critical equipment.`}
+    >
       <AssetsBoard assets={rows} expeditionId={expeditionId} />
     </HqPageShell>
   );

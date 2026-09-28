@@ -21,15 +21,15 @@ export default async function FieldLayout({ children }: { children: React.ReactN
   return (
     <FieldSyncProvider>
       <div className="flex min-h-dvh flex-col bg-bg pb-24">
-        <header className="flex items-center justify-between border-b border-border/80 bg-surface/90 px-4 py-4 backdrop-blur-md">
-          <CryoLinkLogo compact href="/field/home" />
+        <header className="expedition-masthead flex items-center justify-between px-4 py-3 text-white">
+          <CryoLinkLogo compact inverted href="/field/home" />
           <div className="flex items-center gap-2">
-            <span className="max-w-[8rem] truncate text-sm text-muted-foreground sm:max-w-[10rem]">{session.name}</span>
+            <span className="hidden max-w-[10rem] truncate text-sm text-white/75 sm:block">{session.name}</span>
             <LogoutButton />
             <ThemeToggle />
           </div>
         </header>
-        <main className="flex-1 px-4 py-6">{children}</main>
+        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">{children}</main>
         <FieldBottomNav />
       </div>
     </FieldSyncProvider>

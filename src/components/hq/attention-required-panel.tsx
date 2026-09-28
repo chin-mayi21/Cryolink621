@@ -46,19 +46,20 @@ export function AttentionRequiredPanel({ items }: { items: AttentionItem[] }) {
           evaluated separately.
         </p>
       ) : (
-        <ul className="divide-y divide-border">
+        <ul className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2">
           {items.map((item) => {
             const Icon = iconFor(item.type);
             return (
-              <li key={item.id} className="flex flex-wrap items-start justify-between gap-3 px-4 py-3">
+              <li key={item.id} className="flex min-w-0 items-start justify-between gap-3 bg-surface px-3 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-text-primary">{item.title}</p>
-                  <p className="mt-1 font-mono text-xs text-text-secondary">{item.detail}</p>
+                  <p className="text-sm font-medium leading-snug text-text-primary">{item.title}</p>
+                  <p className="mt-1 break-words font-mono text-[10px] leading-relaxed text-text-secondary">{item.detail}</p>
                 </div>
                 <StatusBadge
                   label={labelFor(item.type)}
                   tone={item.tone}
                   icon={Icon}
+                  className="mt-0.5 shrink-0"
                 />
               </li>
             );

@@ -22,10 +22,10 @@ export default async function FamilyLayout({ children }: { children: React.React
 
   return (
     <div className="min-h-dvh bg-bg">
-      <header className="flex items-center justify-between border-b border-border/80 bg-surface/90 px-4 py-4 backdrop-blur-md">
+      <header className="flex items-center justify-between border-b border-border/80 bg-surface/90 px-3 py-3 backdrop-blur-md sm:px-4 sm:py-4">
         <CryoLinkLogo compact href="/family/status" />
         <div className="flex items-center gap-2">
-          <span className="max-w-[8rem] truncate text-sm text-text-secondary sm:max-w-[10rem]">{session.name}</span>
+          <span className="hidden max-w-[10rem] truncate text-sm text-text-secondary sm:block">{session.name}</span>
           <LogoutButton />
           <ThemeToggle />
         </div>

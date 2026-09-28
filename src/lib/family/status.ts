@@ -33,6 +33,12 @@ export type FamilyStatusBundle = {
     statusLabel: string;
     message: string | null;
   }[];
+  familyUpdates: {
+    id: string;
+    message: string;
+    createdAt: string;
+    authorLabel: string;
+  }[];
 };
 
 function deploymentLabel(
@@ -63,7 +69,18 @@ export async function getFamilyStatusForLinkedMember(
 ): Promise<FamilyStatusBundle | null> {
   const personnel = await prisma.personnel.findUnique({
     where: { id: linkedPersonnelId },
-    include: { expedition: true },
+    include: {
+      expedition: true,
+      familyContact: {
+        include: {
+          updates: {
+            orderBy: { createdAt: "desc" },
+            take: 20,
+            include: { author: { select: { name: true, role: true } } },
+          },
+        },
+      },
+    },
   });
   if (!personnel) return null;
 
@@ -170,5 +187,11 @@ export async function getFamilyStatusForLinkedMember(
       statusLabel: statusLabelForCheckIn(c.status),
       message: c.message,
     })),
+    familyUpdates: personnel.familyContact?.updates.map((update) => ({
+      id: update.id,
+      message: update.message,
+      createdAt: update.createdAt.toISOString(),
+      authorLabel: update.author.role === "FIELD_PERSONNEL" ? `${update.author.name} · Field personnel` : "HQ",
+    })) ?? [],
   };
 }

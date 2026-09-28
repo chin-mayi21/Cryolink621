@@ -71,6 +71,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       missions: { include: { team: true, personnel: true } },
       cargoItems: { take: 5, orderBy: { updatedAt: "desc" } },
       assets: true,
+      inventoryNeeds: { orderBy: { createdAt: "asc" } },
       readinessItems: true,
     },
   });

@@ -39,13 +39,12 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
-    if (message === "FAMILY_LINK_UNAVAILABLE") {
+    if (message === "FAMILY_CONTACT_NOT_FOUND") {
       return NextResponse.json(
         {
-          error:
-            "Family accounts are limited to one per linked expedition member. Use the demo family login or contact HQ.",
+          error: "Ask HQ to register your email as a family contact before creating a Family portal account.",
         },
-        { status: 409 }
+        { status: 404 }
       );
     }
     console.error("[register]", err);

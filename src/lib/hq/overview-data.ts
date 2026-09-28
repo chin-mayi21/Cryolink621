@@ -3,13 +3,17 @@ import { fetchAttentionItems, fetchResourceHealth } from "@/lib/hq/attention";
 import { fetchActivityFeed } from "@/lib/hq/activity-feed";
 
 export async function fetchOverviewBundle(expeditionIds: string[]) {
-  const [attention, feed, resource, expedition] = await Promise.all([
+  const [attention, feed, resource, expedition, personnelCount, activeMissionCount] = await Promise.all([
     fetchAttentionItems(expeditionIds),
     fetchActivityFeed(expeditionIds),
     fetchResourceHealth(expeditionIds),
     expeditionIds[0]
       ? prisma.expedition.findUnique({ where: { id: expeditionIds[0] } })
       : Promise.resolve(null),
+    prisma.personnel.count({ where: { expeditionId: { in: expeditionIds } } }),
+    prisma.mission.count({
+      where: { expeditionId: { in: expeditionIds }, status: "ACTIVE" },
+    }),
   ]);
 
   let missionDay: number | null = null;
@@ -48,6 +52,8 @@ export async function fetchOverviewBundle(expeditionIds: string[]) {
     feed,
     resource,
     expedition,
+    personnelCount,
+    activeMissionCount,
     missionDay,
     missionTotalDays,
     positionRows,

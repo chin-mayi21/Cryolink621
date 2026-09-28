@@ -37,7 +37,16 @@ export type FieldDashboard = {
     status: string;
     message: string | null;
     checkedInAt: string;
+    personnelName: string;
+    simulatedLatitude: number | null;
+    simulatedLongitude: number | null;
   }[];
+  station: {
+    name: string;
+    code: string;
+    latitude: number | null;
+    longitude: number | null;
+  } | null;
   stationCode: string | null;
 };
 
@@ -51,7 +60,7 @@ export async function getFieldDashboard(personnelId: string): Promise<FieldDashb
   });
   if (!personnel) return null;
 
-  const station = personnel.team?.stationId
+  const stationRecord = personnel.team?.stationId
     ? await prisma.station.findUnique({ where: { id: personnel.team.stationId } })
     : null;
 
@@ -112,9 +121,10 @@ export async function getFieldDashboard(personnelId: string): Promise<FieldDashb
 
   const recentCheckIns = activeMission
     ? await prisma.checkIn.findMany({
-        where: { missionId: activeMission.id, personnelId },
+        where: { missionId: activeMission.id },
         orderBy: { checkedInAt: "desc" },
-        take: 5,
+        take: 12,
+        include: { personnel: { select: { fullName: true } } },
       })
     : [];
 
@@ -156,8 +166,19 @@ export async function getFieldDashboard(personnelId: string): Promise<FieldDashb
       status: c.status,
       message: c.message,
       checkedInAt: c.checkedInAt.toISOString(),
+      personnelName: c.personnel.fullName,
+      simulatedLatitude: c.simulatedLatitude,
+      simulatedLongitude: c.simulatedLongitude,
     })),
-    stationCode: station?.code ?? null,
+    station: stationRecord
+      ? {
+          name: stationRecord.name,
+          code: stationRecord.code,
+          latitude: stationRecord.latitude,
+          longitude: stationRecord.longitude,
+        }
+      : null,
+    stationCode: stationRecord?.code ?? null,
   };
 }
 

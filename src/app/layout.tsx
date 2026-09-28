@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   applicationName: "CryoLink",
   openGraph: {
     title: "CryoLink",
-    description: "Polar expedition mission control",
+    description: "CryoLink logistics and mission control",
     siteName: "CryoLink",
   },
   icons: {

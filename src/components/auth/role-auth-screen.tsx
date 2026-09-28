@@ -227,6 +227,7 @@ function AuthError({ message }: { message: string }) {
 
 function RoleAuthLayout({ roleEntry, children }: { roleEntry: RoleEntryConfig; children: React.ReactNode }) {
   const RoleIcon = roleEntry.icon;
+  const isFieldPersonnel = roleEntry.role === "FIELD_PERSONNEL";
   return (
     <div className="relative min-h-dvh bg-bg">
       <CryoLinkBackdrop />
@@ -237,15 +238,19 @@ function RoleAuthLayout({ roleEntry, children }: { roleEntry: RoleEntryConfig; c
         </Link>
         <ThemeToggle />
       </header>
-      <div className="relative z-10 mx-auto max-w-md px-4 py-10 animate-rise-in">
+      <div className={cn("relative z-10 mx-auto px-4 py-8 animate-rise-in", isFieldPersonnel ? "max-w-sm" : "max-w-md sm:py-10")}>
         <CryoLinkLogo href="/" />
-        <p className="mt-2 text-sm text-text-secondary">{roleEntry.title}</p>
+        <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-text-secondary">
+          {isFieldPersonnel ? "Field personnel access" : roleEntry.title}
+        </p>
         <div className="mt-6 flex items-start gap-3 rich-card p-4">
           <div className="flex h-10 w-10 items-center justify-center border border-border bg-bg rounded-[2px]">
             <RoleIcon className={`h-5 w-5 ${roleEntry.iconAccentClass}`} strokeWidth={1.75} aria-hidden />
           </div>
           <div>
-            <p className="font-display text-lg font-semibold text-text-primary">Account access</p>
+            <p className="font-display text-lg font-semibold text-text-primary">
+              {isFieldPersonnel ? "Expedition access" : "Account access"}
+            </p>
             <p className="text-sm text-text-secondary">{roleEntry.description}</p>
           </div>
         </div>

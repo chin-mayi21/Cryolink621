@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/design/status-badge";
 
@@ -28,6 +30,7 @@ export function AssetsBoard({
   const [name, setName] = useState("");
   const [category, setCategory] = useState("Vehicle");
   const [busy, setBusy] = useState(false);
+  const [registeredAsset, setRegisteredAsset] = useState(false);
 
   async function setStatus(id: string, status: "OPERATIONAL" | "MAINTENANCE" | "DECOMMISSIONED") {
     const res = await fetch(`/api/hq/assets/${id}`, {
@@ -61,6 +64,7 @@ export function AssetsBoard({
         return;
       }
       toast.success("Asset registered.");
+      setRegisteredAsset(true);
       setTag("");
       setName("");
       router.refresh();
@@ -81,6 +85,14 @@ export function AssetsBoard({
         <Button className="mt-3" size="sm" variant="navy" disabled={busy || !tag || !name} onClick={register}>
           Add asset
         </Button>
+        {registeredAsset ? (
+          <Link
+            href={`/hq/expeditions?expeditionId=${encodeURIComponent(expeditionId)}#expedition-${encodeURIComponent(expeditionId)}`}
+            className={`${buttonVariants({ size: "sm", variant: "secondary" })} ml-2 mt-3`}
+          >
+            Continue to activation <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          </Link>
+        ) : null}
       </div>
 
       <div className="overflow-x-auto border border-border bg-surface rounded-[2px]">
@@ -95,7 +107,7 @@ export function AssetsBoard({
             </tr>
           </thead>
           <tbody>
-            {assets.map((a) => (
+            {assets.length ? assets.map((a) => (
               <tr key={a.id} className="border-b border-border">
                 <td className="px-3 py-2 font-mono text-xs">{a.assetTag}</td>
                 <td className="px-3 py-2">{a.name}</td>
@@ -113,7 +125,11 @@ export function AssetsBoard({
                   </div>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan={5} className="px-3 py-6 text-center text-sm text-text-secondary">No assets registered for this expedition yet.</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

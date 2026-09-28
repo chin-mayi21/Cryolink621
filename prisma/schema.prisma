@@ -40,7 +40,9 @@ model User {
   auditEvents      AuditEvent[]          @relation("AuditActor")
   cargoEvents      CargoEvent[]
   inventoryTxns    InventoryTransaction[]
+  supplyRequests   SupplyRequest[]
   syncOperations   SyncOperation[]
+  familyUpdatesAuthored FamilyUpdate[]
 }
 
 /// HQ officials may manage multiple expeditions; scope enforced server-side
@@ -83,7 +85,9 @@ model Expedition {
   personnel      Personnel[]
   missions       Mission[]
   cargoItems     CargoItem[]
+  inventoryNeeds ExpeditionInventoryNeed[]
   inventoryItems InventoryItem[]
+  supplyRequests SupplyRequest[]
   assets         Asset[]
   incidents      Incident[]
   readinessItems ExpeditionReadinessItem[]
@@ -105,6 +109,20 @@ model ExpeditionReadinessItem {
   @@unique([expeditionId, key])
 }
 
+model ExpeditionInventoryNeed {
+  id           String   @id @default(cuid())
+  expeditionId String
+  itemName     String
+  quantity     Float
+  unit         String
+  note         String?
+  createdAt    DateTime @default(now())
+
+  expedition Expedition @relation(fields: [expeditionId], references: [id], onDelete: Cascade)
+
+  @@index([expeditionId])
+}
+
 model Station {
   id           String  @id @default(cuid())
   expeditionId String
@@ -118,6 +136,7 @@ model Station {
   expedition         Expedition      @relation(fields: [expeditionId], references: [id], onDelete: Cascade)
   teams              Team[]
   inventoryItems     InventoryItem[]
+  supplyRequests     SupplyRequest[]
   assets             Asset[]
   cargoOrigins       CargoItem[]     @relation("CargoOrigin")
   cargoDestinations  CargoItem[]     @relation("CargoDestination")
@@ -165,6 +184,8 @@ model Personnel {
   missionAssignments MissionPersonnel[]
   ledMissions        Mission[]          @relation("MissionLead")
   checkIns           CheckIn[]
+  familyContact       FamilyContact?
+  supplyRequests      SupplyRequest[]
 
   @@unique([expeditionId, employeeCode])
 }
@@ -232,6 +253,33 @@ model CheckIn {
 
   mission   Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
   personnel Personnel @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+}
+
+model FamilyContact {
+  id           String   @id @default(cuid())
+  personnelId  String   @unique
+  fullName     String
+  email        String   @unique
+  relationship String
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  personnel Personnel     @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  updates   FamilyUpdate[]
+}
+
+model FamilyUpdate {
+  id             String   @id @default(cuid())
+  familyContactId String
+  authorUserId   String
+  message        String
+  createdAt      DateTime @default(now())
+
+  familyContact FamilyContact @relation(fields: [familyContactId], references: [id], onDelete: Cascade)
+  author        User          @relation(fields: [authorUserId], references: [id])
+
+  @@index([familyContactId, createdAt])
 }
 
 // ─── Cargo pipeline ──────────────────────────────────────────────────────────
@@ -328,6 +376,35 @@ model InventoryTransaction {
 
   inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
   actor         User?         @relation(fields: [actorUserId], references: [id])
+}
+
+enum SupplyRequestStatus {
+  OPEN
+  APPROVED
+  FULFILLED
+  DECLINED
+}
+
+model SupplyRequest {
+  id                String              @id @default(cuid())
+  expeditionId      String
+  stationId         String
+  personnelId       String
+  requestedByUserId String
+  itemName          String
+  quantity          Float
+  unit              String
+  note              String?
+  status            SupplyRequestStatus @default(OPEN)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  expedition Expedition @relation(fields: [expeditionId], references: [id], onDelete: Cascade)
+  station    Station    @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  personnel  Personnel  @relation(fields: [personnelId], references: [id], onDelete: Cascade)
+  requestedBy User      @relation(fields: [requestedByUserId], references: [id])
+
+  @@index([expeditionId, status, createdAt])
 }
 
 // ─── Assets ──────────────────────────────────────────────────────────────────

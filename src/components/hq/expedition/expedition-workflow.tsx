@@ -5,22 +5,24 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, ChevronDown, Circle } from "lucide-react";
 
 type ExpeditionPayload = {
   id: string;
   code: string;
   name: string;
   status: string;
+  description: string | null;
   destination: string | null;
   objectives: string | null;
   plannedStart: string | null;
   plannedEnd: string | null;
-  teams: { id: string; name: string; callsign: string | null }[];
+  teams: { id: string; name: string; callsign: string | null; station: { name: string } | null }[];
   personnel: { id: string; fullName: string; teamId: string | null }[];
   missions: { id: string; code: string; title: string }[];
   cargoItems: { id: string; manifestCode: string; status: string }[];
   assets: { id: string; assetTag: string; status: string }[];
+  inventoryNeeds?: { id: string; itemName: string; quantity: number; unit: string; note: string | null }[];
   readinessItems: { id: string; key: string; label: string; isComplete: boolean }[];
 };
 
@@ -117,6 +119,7 @@ export function ExpeditionWorkflow({ expeditionId }: { expeditionId: string }) {
   }
 
   const canActivate = data.status !== "ACTIVE" && blockers.length === 0;
+  const inventoryNeeds = data.inventoryNeeds ?? [];
 
   return (
     <div className="space-y-8">
@@ -127,16 +130,16 @@ export function ExpeditionWorkflow({ expeditionId }: { expeditionId: string }) {
         </p>
       </div>
 
-      <ol className="grid gap-3 lg:grid-cols-3">
+      <ol className="space-y-2">
         {STEPS.map((label, idx) => (
-          <li
-            key={label}
-            className={`border px-3 py-3 rounded-[2px] ${idx === 8 ? "border-navy bg-bg lg:col-span-3" : "border-border bg-surface"}`}
-          >
-            <div className="flex items-start gap-2">
-              <span className="font-mono text-xs text-cyan">{idx + 1}</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-text-primary">{label}</p>
+          <li key={label}>
+            <details open={idx === 1} className={`group border ${idx === 8 ? "border-navy bg-bg" : "border-border bg-surface"}`}>
+              <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-3 py-2.5 hover:bg-bg/60 sm:px-4">
+                <span className="font-mono text-xs text-cyan">{String(idx + 1).padStart(2, "0")}</span>
+                <span className="min-w-0 flex-1 text-sm font-medium text-text-primary">{label}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-text-secondary transition-transform group-open:rotate-180" aria-hidden />
+              </summary>
+              <div className="border-t border-border px-3 py-3 sm:px-4">
                 {idx === 0 && (
                   <p className="mt-1 text-xs text-text-secondary">Draft record {data.code} exists.</p>
                 )}
@@ -151,9 +154,22 @@ export function ExpeditionWorkflow({ expeditionId }: { expeditionId: string }) {
                   <StepMission expeditionId={data.id} teams={data.teams} personnel={data.personnel} onDone={load} />
                 )}
                 {idx === 5 && (
-                  <p className="mt-2 font-mono text-[10px] text-text-secondary">
-                    {data.cargoItems.length}+ items tracked · advance statuses in Cargo & Logistics
-                  </p>
+                  <div className="mt-2 space-y-2">
+                    <p className="font-mono text-[10px] text-text-secondary">
+                      {data.cargoItems.length} cargo item(s) tracked · advance statuses in Cargo & Logistics
+                    </p>
+                    <p className="text-xs font-medium text-text-primary">Planned inventory needs</p>
+                    {inventoryNeeds.length ? (
+                      <ul className="space-y-1 text-[10px] text-text-secondary">
+                        {inventoryNeeds.map((item) => (
+                          <li key={item.id} className="flex flex-wrap justify-between gap-x-2">
+                            <span>{item.itemName}{item.note ? ` · ${item.note}` : ""}</span>
+                            <span className="font-mono">{item.quantity} {item.unit}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="text-[10px] text-text-secondary">No planned inventory needs recorded.</p>}
+                  </div>
                 )}
                 {idx === 6 && (
                   <p className="mt-2 font-mono text-[10px] text-text-secondary">
@@ -184,7 +200,7 @@ export function ExpeditionWorkflow({ expeditionId }: { expeditionId: string }) {
                   </div>
                 )}
               </div>
-            </div>
+            </details>
           </li>
         ))}
       </ol>
@@ -200,16 +216,31 @@ function Step2Form({
   onSave: (f: Record<string, string>) => void;
 }) {
   const [destination, setDestination] = useState(data.destination ?? "");
+  const [description, setDescription] = useState(data.description ?? "");
   const [objectives, setObjectives] = useState(data.objectives ?? "");
+  const [plannedStart, setPlannedStart] = useState(data.plannedStart?.slice(0, 10) ?? "");
+  const [plannedEnd, setPlannedEnd] = useState(data.plannedEnd?.slice(0, 10) ?? "");
   return (
     <div className="mt-2 space-y-2">
-      <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Destination" />
-      <Input value={objectives} onChange={(e) => setObjectives(e.target.value)} placeholder="Objectives" />
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Input type="date" aria-label="Expedition start date" value={plannedStart} onChange={(e) => setPlannedStart(e.target.value)} />
+        <Input type="date" aria-label="Expedition end date" min={plannedStart || undefined} value={plannedEnd} onChange={(e) => setPlannedEnd(e.target.value)} />
+      </div>
+      <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Locations / destination" />
+      <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Expedition description" rows={2} className="w-full resize-y border border-border bg-surface px-3 py-2 text-sm text-text-primary" />
+      <textarea value={objectives} onChange={(e) => setObjectives(e.target.value)} placeholder="Research work and objectives" rows={3} className="w-full resize-y border border-border bg-surface px-3 py-2 text-sm text-text-primary" />
       <Button
         type="button"
         size="sm"
         variant="secondary"
-        onClick={() => onSave({ destination, objectives })}
+        disabled={!plannedStart || !plannedEnd || plannedEnd < plannedStart || !destination.trim() || !description.trim() || !objectives.trim()}
+        onClick={() => onSave({
+          destination,
+          description,
+          objectives,
+          plannedStart: new Date(`${plannedStart}T00:00:00.000Z`).toISOString(),
+          plannedEnd: new Date(`${plannedEnd}T23:59:59.999Z`).toISOString(),
+        })}
       >
         Save
       </Button>
@@ -223,7 +254,7 @@ function StepTeams({
   onDone,
 }: {
   expeditionId: string;
-  teams: { id: string; name: string }[];
+  teams: { id: string; name: string; station: { name: string } | null }[];
   onDone: () => void;
 }) {
   const [name, setName] = useState("");
@@ -244,6 +275,11 @@ function StepTeams({
   return (
     <div className="mt-2 space-y-2">
       <p className="font-mono text-[10px] text-text-secondary">{teams.length} team(s)</p>
+      {teams.length > 0 ? (
+        <ul className="space-y-1 text-[10px] text-text-secondary">
+          {teams.map((team) => <li key={team.id}>{team.name} · {team.station?.name ?? "No station"}</li>)}
+        </ul>
+      ) : null}
       <div className="flex gap-2">
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="New team name" />
         <Button type="button" size="sm" onClick={add} disabled={!name.trim()}>Add</Button>
@@ -276,7 +312,7 @@ function StepPersonnel({
   }
   return (
     <ul className="mt-2 max-h-32 space-y-1 overflow-y-auto text-xs">
-      {personnel.slice(0, 6).map((p) => (
+      {personnel.map((p) => (
         <li key={p.id} className="flex items-center justify-between gap-2">
           <span className="truncate">{p.fullName}</span>
           <select

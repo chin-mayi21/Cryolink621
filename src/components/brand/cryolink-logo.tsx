@@ -13,7 +13,7 @@ export function CryoLinkLogo({ className, compact, inverted, href = "/" }: CryoL
   const mark = (
     <div
       className={cn(
-        "relative flex shrink-0 items-center justify-center rounded-[6px] shadow-sm",
+        "relative flex shrink-0 items-center justify-center rounded-[5px] shadow-sm",
         compact ? "h-8 w-8" : "h-10 w-10",
         inverted
           ? "bg-white/15 ring-1 ring-white/25"
@@ -29,8 +29,8 @@ export function CryoLinkLogo({ className, compact, inverted, href = "/" }: CryoL
         strokeWidth="1.5"
         strokeLinecap="round"
       >
-        <path d="M12 3v18M12 3l2 3.5M12 3l-2 3.5M12 21l2-3.5M12 21l-2-3.5" />
-        <path d="M6.5 9.5 17.5 14.5M6.5 14.5 17.5 9.5" />
+        <path d="M2.5 18.5 9.1 7l3 5 2.3-3.9 7.1 10.4" strokeWidth="2" />
+        <path d="m10.9 18.5 4.3-7.1 6.3 7.1" strokeWidth="2" />
       </svg>
       <span className="cryolink-mark-pulse absolute inset-0 rounded-[6px]" />
     </div>
@@ -56,7 +56,7 @@ export function CryoLinkLogo({ className, compact, inverted, href = "/" }: CryoL
             inverted ? "text-white/65" : "text-text-secondary"
           )}
         >
-          Mission control
+          Logistics & asset management
         </p>
       ) : null}
     </div>

@@ -65,19 +65,11 @@ export async function registerUser(input: RegisterInput) {
     }
 
     if (input.role === "FAMILY_NOK") {
-      const personnel = await tx.personnel.findFirst({
-        where: {
-          expeditionId: expedition.id,
-          nextOfKin: null,
-        },
-        orderBy: { fullName: "asc" },
-      });
-      if (!personnel) {
-        throw new Error("FAMILY_LINK_UNAVAILABLE");
-      }
+      const contact = await tx.familyContact.findUnique({ where: { email } });
+      if (!contact) throw new Error("FAMILY_CONTACT_NOT_FOUND");
       await tx.user.update({
         where: { id: user.id },
-        data: { nextOfKinForId: personnel.id },
+        data: { nextOfKinForId: contact.personnelId },
       });
     }
 

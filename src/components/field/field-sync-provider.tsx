@@ -9,6 +9,7 @@ import { useFieldConnectivity } from "@/stores/field-connectivity";
 export function FieldSyncProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const setPendingCount = useFieldConnectivity((s) => s.setPendingCount);
+  const setBrowserOnline = useFieldConnectivity((s) => s.setBrowserOnline);
   const forceOffline = useFieldConnectivity((s) => s.forceOffline);
 
   const refreshPending = useCallback(async () => {
@@ -25,13 +26,23 @@ export function FieldSyncProvider({ children }: { children: React.ReactNode }) {
   }, [refreshPending, router]);
 
   useEffect(() => {
+    const updateConnection = () => setBrowserOnline(navigator.onLine);
+    updateConnection();
     refreshPending();
     tryFlush();
 
-    const onOnline = () => tryFlush();
+    const onOnline = () => {
+      updateConnection();
+      tryFlush();
+    };
+    const onOffline = () => updateConnection();
     window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
-  }, [forceOffline, refreshPending, tryFlush]);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, [forceOffline, refreshPending, setBrowserOnline, tryFlush]);
 
   return children;
 }

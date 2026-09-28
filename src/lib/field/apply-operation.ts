@@ -11,6 +11,7 @@ import {
   checkInPayloadSchema,
   deviceHeartbeatPayloadSchema,
   inventoryConsumptionPayloadSchema,
+  supplyRequestPayloadSchema,
   sosPayloadSchema,
   type FieldOperationType,
 } from "@/lib/field/operations";
@@ -34,10 +35,19 @@ export async function applyFieldOperation(
     return { status: "duplicate" };
   }
 
-  let syncRow = existing;
-  if (!syncRow) {
-    syncRow = await prisma.syncOperation.create({
-      data: {
+  let syncRow: Awaited<ReturnType<typeof prisma.syncOperation.upsert>> | null = null;
+  try {
+    syncRow = await prisma.syncOperation.upsert({
+      where: { clientOperationId },
+      update: {
+        userId: ctx.userId,
+        expeditionId: ctx.expeditionId,
+        operationType,
+        payload: JSON.stringify(payload),
+        status: SyncOperationStatus.SYNCING,
+        errorMessage: null,
+      },
+      create: {
         clientOperationId,
         userId: ctx.userId,
         expeditionId: ctx.expeditionId,
@@ -46,11 +56,15 @@ export async function applyFieldOperation(
         status: SyncOperationStatus.SYNCING,
       },
     });
-  } else {
-    syncRow = await prisma.syncOperation.update({
-      where: { id: syncRow.id },
-      data: { status: SyncOperationStatus.SYNCING, errorMessage: null },
+  } catch (err) {
+    const duplicate = await prisma.syncOperation.findUnique({
+      where: { clientOperationId },
     });
+    if (!duplicate) throw err;
+    if (duplicate.status === SyncOperationStatus.SYNCED) {
+      return { status: "duplicate" };
+    }
+    syncRow = duplicate;
   }
 
   try {
@@ -82,6 +96,8 @@ async function executeOperation(
       return applySos(payload, ctx);
     case "INVENTORY_CONSUMPTION":
       return applyInventoryConsumption(payload, ctx);
+    case "SUPPLY_REQUEST":
+      return applySupplyRequest(payload, ctx);
     case "DEVICE_HEARTBEAT":
       return applyHeartbeat(payload, ctx);
     default:
@@ -165,6 +181,53 @@ async function applySos(payload: Record<string, unknown>, ctx: ApplyContext) {
   const lat = data.simulatedLatitude ?? -71.02;
   const lng = data.simulatedLongitude ?? 12.14;
   const now = new Date();
+  const existingIncident = await prisma.incident.findFirst({
+    where: {
+      expeditionId: ctx.expeditionId,
+      missionId: missionId ?? null,
+      severity: IncidentSeverity.CRITICAL,
+      status: {
+        in: [
+          IncidentStatus.NEW,
+          IncidentStatus.ACKNOWLEDGED,
+          IncidentStatus.INVESTIGATING,
+          IncidentStatus.RESPONSE_ACTIVE,
+        ],
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existingIncident) {
+    await prisma.$transaction(async (tx) => {
+      await tx.incident.update({
+        where: { id: existingIncident.id },
+        data: {
+          summary: data.message,
+          currentStatusSummary: "SOS update received from field device — HQ escalation required.",
+          lastConfirmedLat: lat,
+          lastConfirmedLng: lng,
+          lastConfirmedAt: now,
+        },
+      });
+      await tx.personnel.update({
+        where: { id: ctx.personnelId },
+        data: { lastDeviceSyncAt: now },
+      });
+      await tx.auditEvent.create({
+        data: {
+          actorUserId: ctx.userId,
+          expeditionId: ctx.expeditionId,
+          entityType: "Incident",
+          entityId: existingIncident.id,
+          action: AuditAction.UPDATE,
+          previousState: JSON.stringify({ summary: existingIncident.summary }),
+          newState: JSON.stringify({ summary: data.message, source: "FIELD_SOS_UPDATE" }),
+        },
+      });
+    });
+    return existingIncident.id;
+  }
 
   const incident = await prisma.$transaction(async (tx) => {
     const row = await tx.incident.create({
@@ -249,6 +312,49 @@ async function applyInventoryConsumption(payload: Record<string, unknown>, ctx: 
   });
 
   return tx.id;
+}
+
+async function applySupplyRequest(payload: Record<string, unknown>, ctx: ApplyContext) {
+  const data = supplyRequestPayloadSchema.parse(payload);
+  const person = await prisma.personnel.findUnique({
+    where: { id: ctx.personnelId },
+    include: { team: true },
+  });
+  if (!person?.team?.stationId) {
+    throw new Error("Your team has no station — cannot request supplies.");
+  }
+
+  const request = await prisma.$transaction(async (tx) => {
+    const row = await tx.supplyRequest.create({
+      data: {
+        expeditionId: ctx.expeditionId,
+        stationId: person.team!.stationId!,
+        personnelId: person.id,
+        requestedByUserId: ctx.userId,
+        itemName: data.itemName,
+        quantity: data.quantity,
+        unit: data.unit,
+        note: data.note || null,
+      },
+    });
+    await tx.personnel.update({
+      where: { id: person.id },
+      data: { lastDeviceSyncAt: new Date() },
+    });
+    await tx.auditEvent.create({
+      data: {
+        actorUserId: ctx.userId,
+        expeditionId: ctx.expeditionId,
+        entityType: "SupplyRequest",
+        entityId: row.id,
+        action: AuditAction.CREATE,
+        newState: JSON.stringify({ itemName: row.itemName, quantity: row.quantity, unit: row.unit }),
+      },
+    });
+    return row;
+  });
+
+  return request.id;
 }
 
 async function applyHeartbeat(payload: Record<string, unknown>, ctx: ApplyContext) {

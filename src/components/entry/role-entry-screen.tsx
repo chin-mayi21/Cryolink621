@@ -13,10 +13,10 @@ export function RoleEntryScreen() {
     <div className="relative min-h-dvh bg-bg">
       <CryoLinkBackdrop />
 
-      <header className="animate-rise-in relative z-10 flex items-center justify-between border-b border-border/80 bg-surface/85 px-6 py-4 backdrop-blur-md">
-        <CryoLinkLogo />
+      <header className="expedition-masthead animate-rise-in relative z-10 flex items-center justify-between px-6 py-4 text-white">
+        <CryoLinkLogo inverted />
         <div className="flex items-center gap-4">
-          <p className="hidden font-mono text-[10px] uppercase tracking-widest text-text-secondary sm:block">
+          <p className="hidden font-mono text-[10px] uppercase tracking-widest text-white/75 sm:block">
             MoES / NCPOR
           </p>
           <ThemeToggle />

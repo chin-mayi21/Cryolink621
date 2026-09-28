@@ -20,8 +20,29 @@ function loadDatabaseUrlFromDotenv() {
   return "file:./dev.db";
 }
 
+function clearStalePrismaArtifacts() {
+  const prismaClientDir = path.join(process.cwd(), "node_modules", ".prisma", "client");
+  if (!fs.existsSync(prismaClientDir)) return;
+
+  for (const entry of fs.readdirSync(prismaClientDir, { withFileTypes: true })) {
+    const name = entry.name;
+    const isStale =
+      entry.isFile() &&
+      (name.endsWith(".tmp") || name.includes(".tmp") || name.startsWith("query_engine-") || name.startsWith("libquery_engine-"));
+
+    if (!isStale) continue;
+
+    try {
+      fs.unlinkSync(path.join(prismaClientDir, name));
+    } catch {
+      // Windows may briefly keep a stale Prisma binary locked during failed generation.
+    }
+  }
+}
+
 const databaseUrl = loadDatabaseUrlFromDotenv();
 const usePostgres = databaseUrl.startsWith("postgres");
+clearStalePrismaArtifacts();
 
 const schemaPath = path.join(process.cwd(), "prisma", "schema.prisma");
 let schema = fs.readFileSync(schemaPath, "utf8");

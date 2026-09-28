@@ -9,7 +9,7 @@ export default async function HqLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="flex min-h-dvh bg-bg">
+    <div className="flex min-h-dvh flex-col bg-bg md:flex-row">
       <HqSidebar />
       <div className="flex min-w-0 flex-1 flex-col">{children}</div>
     </div>

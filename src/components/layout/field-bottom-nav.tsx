@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, MapPin, Package, Boxes, CloudOff } from "lucide-react";
+import { Home, MapPin, Package, CloudOff, MessagesSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFieldConnectivity } from "@/stores/field-connectivity";
 
 const items = [
   { href: "/field/home", label: "Home", icon: Home },
   { href: "/field/mission", label: "Mission", icon: MapPin },
-  { href: "/field/equipment", label: "Gear", icon: Package },
-  { href: "/field/inventory", label: "Supplies", icon: Boxes },
+  { href: "/field/inventory", label: "Gear", icon: Package },
+  { href: "/field/communication", label: "Comms", icon: MessagesSquare },
   { href: "/field/sync", label: "Sync", icon: CloudOff },
 ] as const;
 
@@ -23,7 +23,7 @@ export function FieldBottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-surface/95 px-2 pb-[env(safe-area-inset-bottom)] backdrop-blur-md"
       aria-label="Field navigation"
     >
-      <ul className="mx-auto flex max-w-lg items-stretch justify-between gap-1 py-2">
+      <ul className="mx-auto flex w-full max-w-lg items-stretch justify-between gap-1 py-2 md:max-w-3xl lg:max-w-5xl">
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (

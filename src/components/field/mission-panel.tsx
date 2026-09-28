@@ -57,6 +57,7 @@ export function MissionPanel({
 
   return (
     <div className="space-y-6">
+      <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
       <article className="border border-border bg-surface p-4 rounded-[2px]">
         <p className="font-mono text-xs text-cyan">{activeMission.code}</p>
         <h2 className="font-display text-xl font-semibold">{activeMission.title}</h2>
@@ -74,7 +75,7 @@ export function MissionPanel({
         </p>
       </article>
 
-      <div className="border border-border bg-surface p-4 rounded-[2px]">
+      <div id="check-in" className="scroll-mt-4 border border-border bg-surface p-4 rounded-[2px]">
         <h3 className="font-medium text-text-primary">Submit check-in</h3>
         <p className="mt-1 text-xs text-text-secondary">
           Controlled action only — queues offline if needed. GPS labeled simulated.
@@ -89,16 +90,17 @@ export function MissionPanel({
           Queue check-in
         </Button>
       </div>
+      </div>
 
       <div>
-        <h3 className="text-sm font-medium text-text-secondary">Your recent check-ins</h3>
+        <h3 className="text-sm font-medium text-text-secondary">Mission check-ins</h3>
         <ul className="mt-2 space-y-2">
           {recentCheckIns.length === 0 ? (
             <li className="text-xs text-text-secondary">None logged yet.</li>
           ) : (
             recentCheckIns.map((c) => (
-              <li key={c.id} className="border border-border px-3 py-2 font-mono text-[10px] rounded-[2px]">
-                {c.checkedInAt.slice(0, 16)}Z · {c.status} — {c.message ?? "—"}
+                  <li key={c.id} className="border border-border px-3 py-2 font-mono text-[10px] rounded-[2px]">
+                    {c.checkedInAt.slice(0, 16)}Z · {c.personnelName} · {c.status} — {c.message ?? "—"}
               </li>
             ))
           )}

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const fieldOperationTypes = ["CHECK_IN", "SOS", "INVENTORY_CONSUMPTION", "DEVICE_HEARTBEAT"] as const;
+export const fieldOperationTypes = ["CHECK_IN", "SOS", "INVENTORY_CONSUMPTION", "SUPPLY_REQUEST", "DEVICE_HEARTBEAT"] as const;
 export type FieldOperationType = (typeof fieldOperationTypes)[number];
 
 export const checkInPayloadSchema = z.object({
@@ -21,6 +21,13 @@ export const inventoryConsumptionPayloadSchema = z.object({
   inventoryItemId: z.string(),
   quantity: z.coerce.number().positive(),
   note: z.string().max(200).optional(),
+});
+
+export const supplyRequestPayloadSchema = z.object({
+  itemName: z.string().trim().min(2).max(120),
+  quantity: z.coerce.number().positive(),
+  unit: z.string().trim().min(1).max(24),
+  note: z.string().trim().max(200).optional(),
 });
 
 export const deviceHeartbeatPayloadSchema = z.object({
